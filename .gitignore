@@ -1,0 +1,16 @@
+# Ignore virtual environment
+yolov8_env/
+venv/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Env files
+.env
+
+# YOLO models (optional)
+*.pt
+*.weights
