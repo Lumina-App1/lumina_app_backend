@@ -1,52 +1,45 @@
-from ultralytics import YOLO
 import cv2
+import time
+from ultralytics import YOLO
+from distance_direction.utils import get_full_guidance
 
-# Load model once
 model = YOLO("yolov8n.pt")
+THRESHOLD = 0.45
 
-THRESHOLD = 0.4
-
-
-def get_direction(box, img_width):
-    x_center = (box[0] + box[2]) / 2
-
-    if x_center < img_width / 3:
-        return "left"
-    elif x_center < 2 * img_width / 3:
-        return "center"
-    else:
-        return "right"
-
-
-def get_distance(box):
-    width = box[2] - box[0]
-
-    if width > 200:
-        return "near"
-    else:
-        return "far"
+# Target search state
+searching = False
+current_target = None
+last_search_announcement = time.time()
 
 
 def detect_target_object(img, target_name):
-    # Resize image for faster processing
-    img = cv2.resize(img, (640, 480))
-    height, width, _ = img.shape
-
-    # Run YOLO detection
-    results = model(img)
-
+    """
+    Search for specific target object with guidance
+    """
+    global searching, current_target, last_search_announcement
+    
+    searching = True
+    current_target = target_name
+    
+    height, width = img.shape[:2]
+    
+    # Run detection
+    results = model(img, verbose=False)
+    
     best_match = None
     max_conf = 0
-
-    # Loop through detections
+    
     for r in results:
+        if r.boxes is None:
+            continue
+            
         for box in r.boxes:
             cls = int(box.cls[0])
             label = model.names[cls]
             conf = float(box.conf[0])
             coords = box.xyxy[0].tolist()
-
-            # Check if this object matches target
+            
+            # Check if matches target
             if conf > THRESHOLD and label.lower() == target_name.lower():
                 if conf > max_conf:
                     max_conf = conf
@@ -55,24 +48,53 @@ def detect_target_object(img, target_name):
                         "confidence": conf,
                         "box": coords
                     }
-
-    # If object NOT found
+    
+    # Target not found
     if best_match is None:
+        current_time = time.time()
+        # Don't spam the same message every frame
+        if current_time - last_search_announcement > 3:
+            last_search_announcement = current_time
+            return {
+                "status": "not_found",
+                "voice_message": f"{target_name} not found. Slowly move the camera left and right."
+            }
         return {
             "status": "not_found",
-            "message": f"{target_name} not visible. Move left or right slowly."
+            "voice_message": None
         }
-
-    # If object found → calculate direction & distance
+    
+    # Target found - get guidance
     box = best_match["box"]
-
-    direction = get_direction(box, width)
-    distance = get_distance(box)
-
+    guidance = get_full_guidance(box, width, height, best_match["label"], best_match["confidence"])
+    
+    if guidance is None:
+        return {
+            "status": "found",
+            "voice_message": None
+        }
+    
+    # Enhanced found message for target
+    if guidance["meters"] < 0.8:
+        final_message = f"Target found! {guidance['voice_message']} You can reach out now."
+    else:
+        final_message = f"Target found! {guidance['voice_message']}"
+    
     return {
         "status": "found",
         "label": best_match["label"],
         "confidence": best_match["confidence"],
-        "direction": direction,
-        "distance": distance
+        "direction": guidance["direction"],
+        "guidance": guidance["guidance"],
+        "distance": guidance["distance"],
+        "meters": guidance["meters"],
+        "warning": guidance["warning"],
+        "voice_message": final_message
     }
+
+
+def reset_target_search():
+    """Reset target search state"""
+    global searching, current_target
+    searching = False
+    current_target = None
