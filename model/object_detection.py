@@ -6,7 +6,7 @@ from distance_direction.utils import get_full_guidance
 # Load YOLO model once
 model = YOLO("yolov8n.pt")
 
-THRESHOLD = 0.45  # Confidence threshold (45%)
+THRESHOLD = 0.25  # Confidence threshold (45%)
 
 # Frame throttling - process every 3rd frame only
 frame_counter = 0
