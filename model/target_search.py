@@ -3,7 +3,7 @@ import time
 from ultralytics import YOLO
 from distance_direction.utils import get_full_guidance
 
-model = YOLO("yolov8n.pt")
+model = YOLO("yolov8s.pt")
 THRESHOLD = 0.45
 
 # Target search state

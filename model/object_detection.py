@@ -4,17 +4,17 @@ from ultralytics import YOLO
 from distance_direction.utils import get_full_guidance
 
 # Load YOLO model once
-model = YOLO("yolov8n.pt")
+model = YOLO("yolov8s.pt")
 
-THRESHOLD = 0.25  # Confidence threshold (45%)
+THRESHOLD = 0.45  # Confidence threshold (25%)
 
 # Frame throttling - process every 3rd frame only
 frame_counter = 0
-PROCESS_EVERY_N_FRAMES = 3
+PROCESS_EVERY_N_FRAMES = 1
 
 # Track last detection time
 last_detection_time = time.time()
-NO_DETECTION_TIMEOUT = 3  # seconds
+NO_DETECTION_TIMEOUT = 2  # seconds
 
 
 def detect_all_objects(img):
