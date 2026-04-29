@@ -17,6 +17,8 @@ last_detection_time = time.time()
 NO_DETECTION_TIMEOUT = 2  # seconds
 
 
+
+
 def detect_all_objects(img):
     """
     Optimized detection with frame throttling and non-repetition
