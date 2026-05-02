@@ -26,10 +26,10 @@ def get_full_guidance(box, img_width, img_height, label, confidence):
     # Determine if user needs to STOP (very close)
     if distance_data["meters"] < 0.8:
         action = "STOP"
-        action_message = "Stop. Object is very close to you."
+        action_message = f"Stop. {label} is very close to you."
     elif distance_data["meters"] < 1.5:
         action = "SLOW"
-        action_message = "Move forward slowly and carefully."
+        action_message = f"Move forward slowly, {label} is nearby."
     else:
         action = "MOVE"
         action_message = "Keep moving forward."
@@ -38,13 +38,13 @@ def get_full_guidance(box, img_width, img_height, label, confidence):
     if direction_data["direction"] == "center":
         voice_message = (
             f"{label} detected straight ahead, "
-            f"{distance_data['warning'].lower()}. "
+            f"{distance_data['warning'].lower().replace('object', label)}. "
             f"{action_message}"
         )
     else:
         voice_message = (
             f"{label} detected on your {direction_data['direction']}, "
-            f"{distance_data['warning'].lower()}. "
+            f"{distance_data['warning'].lower().replace('object', label)}. "
             f"{direction_data['guidance']}. "
             f"{action_message}"
         )
