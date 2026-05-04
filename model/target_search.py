@@ -313,7 +313,8 @@ def detect_target_object(img, target_name):
             return {
                 "status": "not_found",
                 "voice_message":
-                    f"{target_name} not found. Move camera slowly left and right."
+                # f"{target_name} not found. Move camera slowly left and right."
+                f"{target_name} not found."
             }
 
         else:
@@ -333,16 +334,16 @@ def detect_target_object(img, target_name):
     if guidance is None:
         return {
             "status": "found",
-            "voice_message": "Target found ahead"
+            "voice_message": f"{target_name} found ahead"
         }
 
     if guidance["meters"] < 0.8:
         voice_message = (
-            f"Target found. {guidance['voice_message']} You can reach out now."
+            f"{target_name} found. {guidance['message']} You can reach out now."
         )
     else:
         voice_message = (
-            f"Target found. {guidance['voice_message']}"
+            f"{target_name} found. {guidance['message']}"
         )
 
     return {
@@ -354,7 +355,7 @@ def detect_target_object(img, target_name):
         "distance": guidance["distance"],
         "meters": guidance["meters"],
         "warning": guidance["warning"],
-        "voice_message": voice_message
+        "voice message": guidance["message"]
     }
 
 

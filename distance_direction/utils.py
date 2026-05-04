@@ -41,12 +41,21 @@ def get_full_guidance(box, img_width, img_height, label, confidence):
             f"{distance_data['warning'].lower().replace('object', label)}. "
             f"{action_message}"
         )
+        message = (
+            f"{label} detected straight ahead, "
+            f"{distance_data['warning'].lower().replace('object', label)}. "
+        )
     else:
         voice_message = (
             f"{label} detected on your {direction_data['direction']}, "
             f"{distance_data['warning'].lower().replace('object', label)}. "
             f"{direction_data['guidance']}. "
             f"{action_message}"
+        )
+        message = (
+            f"{label} detected on your {direction_data['direction']}, "
+            f"{distance_data['warning'].lower().replace('object', label)}. "
+            f"{direction_data['guidance']}. "
         )
     
     # Check for repetition (don't repeat same thing every frame)
@@ -80,5 +89,6 @@ def get_full_guidance(box, img_width, img_height, label, confidence):
         "action": action,
         "action_message": action_message,
         "voice_message": voice_message,
+        "message":message,
         "normalized_pos": direction_data["normalized_pos"]
     }
