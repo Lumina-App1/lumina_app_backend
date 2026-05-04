@@ -1,9 +1,9 @@
 import cv2
 import time
 import re
-from ultralytics import YOLO
+# from ultralytics import YOLO
 from distance_direction.utils import get_full_guidance
-
+from model.yolo_model import model
 
 def is_match(label, target):
     label = label.lower().strip()
@@ -112,8 +112,8 @@ def is_match(label, target):
     return False
 
 
-# Model
-model = YOLO("yolov8m.pt")
+
+
 THRESHOLD = 0.40
 
 searching = False

@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+yolov8_env/
+.git
+.gitignore
+test.jpeg
+test_run.py

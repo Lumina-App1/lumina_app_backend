@@ -127,6 +127,8 @@ def health():
 
 
 if __name__ == '__main__':
+    
+    import os
     print("=" * 50)
     print("AI Vision Aid Backend (Flask)")
     print("=" * 50)
@@ -138,4 +140,10 @@ if __name__ == '__main__':
     print("  GET  /health          - Health check")
     print("=" * 50)
 
-    app.run(host='0.0.0.0', port=5000, debug=True, threaded=True)
+    # app.run(host='0.0.0.0', port=5000, debug=True, threaded=True)
+    app.run(
+        host='0.0.0.0',
+        port=int(os.environ.get("PORT", 5000)),
+        debug=False,
+        threaded=True
+    )

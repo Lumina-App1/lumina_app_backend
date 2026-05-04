@@ -1,10 +1,10 @@
 import cv2
 import time
-from ultralytics import YOLO
+
 from distance_direction.utils import get_full_guidance
 
 # Load YOLO model once at startup
-model = YOLO("yolov8m.pt")
+from model.yolo_model import model
 
 # Confidence threshold — objects below this are ignored
 THRESHOLD = 0.40
