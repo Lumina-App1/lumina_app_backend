@@ -3,63 +3,75 @@ import time
 from ultralytics import YOLO
 from distance_direction.utils import get_full_guidance
 
-# Load YOLO model once
-model = YOLO("yolov8s.pt")
+# Load YOLO model once at startup
+model = YOLO("yolov8m.pt")
 
-THRESHOLD = 0.45  # Confidence threshold (45%)
+# Confidence threshold — objects below this are ignored
+THRESHOLD = 0.40
 
-# Frame throttling - process every 3rd frame only
-frame_counter = 0
-PROCESS_EVERY_N_FRAMES = 1
-
-# Track last detection time
+# Track last detection time for no-detection messages
 last_detection_time = time.time()
 NO_DETECTION_TIMEOUT = 2  # seconds
 
 
-
-
 def detect_all_objects(img):
     """
-    Optimized detection with frame throttling and non-repetition
+    Detect all objects in frame.
+    Returns list of detections sorted by distance (closest first).
+    Returns empty list if nothing found.
+    Returns None only on frame skip (not used currently).
     """
-    global frame_counter, last_detection_time
-    
-    frame_counter += 1
-    
-    # SKIP frames for performance (don't process every frame)
-    if frame_counter % PROCESS_EVERY_N_FRAMES != 0:
-        return None  # Skip this frame
-    
+    global last_detection_time
+
     # Get frame dimensions
     height, width = img.shape[:2]
-    
-    # Run YOLO detection (no resize - keep original for better accuracy)
+
+    # Run YOLO
     results = model(img, verbose=False)
-    
+
     detections = []
-    
+
     for r in results:
         if r.boxes is None:
             continue
-            
+
         for box in r.boxes:
             cls = int(box.cls[0])
             label = model.names[cls]
             conf = float(box.conf[0])
             coords = box.xyxy[0].tolist()
-            
-            # Filter low confidence
+
+            # Skip low confidence detections
             if conf < THRESHOLD:
                 continue
-            
-            # Get full guidance (direction + distance + voice message)
+
+            # Get guidance (direction + distance + voice)
             guidance = get_full_guidance(coords, width, height, label, conf)
-            
-            # Skip if this is a repetition (guidance returns None)
+
+            # guidance is None = repetition cooldown active, skip voice
+            # but still count as a detection for last_detection_time
             if guidance is None:
+                # Still a valid detection, just dont announce it
+                # Add minimal entry so detection_found stays True
+                detections.append({
+                    "label": label,
+                    "confidence": conf,
+                    "box": coords,
+                    "direction": "unknown",
+                    "short_guidance": "",
+                    "guidance": "",
+                    "distance": "",
+                    "meters": 999,
+                    "warning": "",
+                    "instruction": "",
+                    "action": "",
+                    "action_message": "",
+                    "voice_message": "",  # Empty = no announcement needed
+                    "normalized_pos": [0.5, 0.5],
+                    "silent": True  # Flag: detected but dont speak
+                })
                 continue
-            
+
             detections.append({
                 "label": label,
                 "confidence": conf,
@@ -74,26 +86,33 @@ def detect_all_objects(img):
                 "action": guidance["action"],
                 "action_message": guidance["action_message"],
                 "voice_message": guidance["voice_message"],
-                "normalized_pos": guidance["normalized_pos"]
+                "normalized_pos": guidance["normalized_pos"],
+                "silent": False
             })
-    
-    # Update last detection time if objects found
+
+    # Update last detection time if any objects found (silent or not)
     if detections:
         last_detection_time = time.time()
-    
-    # Sort by priority (closest objects first, then highest confidence)
-    detections.sort(key=lambda x: (x["meters"], -x["confidence"]))
-    
-    # Return top 3 objects (limit for performance)
-    return detections[:3] if detections else []
+
+    # Filter to only non-silent for sorting and returning top results
+    speakable = [d for d in detections if not d.get("silent", False)]
+
+    # Sort by distance (closest first), then confidence
+    speakable.sort(key=lambda x: (x["meters"], -x["confidence"]))
+
+    # Return top 3 speakable detections
+    return speakable[:3] if speakable else []
 
 
 def get_no_detection_message():
-    """Returns message when no objects detected for a while"""
+    """
+    Returns a message when no objects detected for a while.
+    Returns None if objects were recently detected.
+    """
     global last_detection_time
-    
+
     time_since_last = time.time() - last_detection_time
-    
+
     if time_since_last > NO_DETECTION_TIMEOUT:
         return {
             "status": "no_objects",

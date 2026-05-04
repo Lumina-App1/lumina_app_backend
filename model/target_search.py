@@ -11,7 +11,6 @@ def is_match(label, target):
 
     synonyms = {
         "person": ["person", "human", "man", "woman", "people"],
-
         "bicycle": ["bicycle", "bike", "cycle"],
         "car": ["car", "automobile", "vehicle"],
         "motorcycle": ["motorcycle", "bike", "motorbike"],
@@ -105,7 +104,7 @@ def is_match(label, target):
 
     allowed = synonyms.get(target, [target])
 
-    # ✅ Flexible matching (FIXED)
+    #  Flexible matching (FIXED)
     for word in allowed:
         if word in label or label in word:
             return True
@@ -114,8 +113,8 @@ def is_match(label, target):
 
 
 # Model
-model = YOLO("yolov8s.pt")
-THRESHOLD = 0.35
+model = YOLO("yolov8m.pt")
+THRESHOLD = 0.40
 
 searching = False
 current_target = None
