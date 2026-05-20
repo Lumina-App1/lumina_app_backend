@@ -1,9 +1,9 @@
 import cv2
 import time
 import re
-# from ultralytics import YOLO
+from ultralytics import YOLO
 from distance_direction.utils import get_full_guidance
-from model.yolo_model import model
+
 
 def is_match(label, target):
     label = label.lower().strip()
@@ -104,7 +104,7 @@ def is_match(label, target):
 
     allowed = synonyms.get(target, [target])
 
-    #  Flexible matching (FIXED)
+    #  Flexible matching
     for word in allowed:
         if word in label or label in word:
             return True
@@ -112,8 +112,8 @@ def is_match(label, target):
     return False
 
 
-
-
+# Model
+model = YOLO("yolov8m.pt")
 THRESHOLD = 0.40
 
 searching = False
@@ -138,7 +138,7 @@ def normalize_target(target):
     aliases = {
        # --- PERSON & ACCESSORIES ---
         "person": "person", "human": "person", "man": "person", "woman": "person", "people": "person", "guy": "person", "girl": "person", "boy": "person",
-        "bicycle": "bicycle", "bike": "bicycle", "cycle": "bicycle", "cycle": "bicycle",
+        "bicycle": "bicycle", "bike": "bicycle", "cycle": "bicycle",
         "car": "car", "automobile": "car", "vehicle": "car", "sedan": "car", "suv": "car",
         "motorcycle": "motorcycle", "motorbike": "motorcycle", "scooter": "motorcycle",
         "airplane": "airplane", "plane": "airplane", "aircraft": "airplane", "jet": "airplane",
@@ -146,7 +146,7 @@ def normalize_target(target):
         "train": "train", "locomotive": "train", "subway": "train", "metro": "train",
         "truck": "truck", "lorry": "truck", "semi": "truck", "pickup": "truck",
         "boat": "boat", "ship": "boat", "vessel": "boat", "yacht": "boat", "canoe": "boat",
-        
+
         # --- OUTDOOR/TRAFFIC ---
         "traffic light": "traffic light", "signal": "traffic light", "stoplight": "traffic light",
         "fire hydrant": "fire hydrant", "hydrant": "fire hydrant",
@@ -279,7 +279,7 @@ def detect_target_object(img, target_name):
 
             cls = int(box.cls[0])
 
-            #  FIX: normalize YOLO label
+            #  Normalize YOLO label
             label = model.names[cls].lower()
             label = normalize_target(label)
 
@@ -311,9 +311,7 @@ def detect_target_object(img, target_name):
 
             return {
                 "status": "not_found",
-                "voice_message":
-                # f"{target_name} not found. Move camera slowly left and right."
-                f"{target_name} not found."
+                "voice_message": f"{target_name} not found."
             }
 
         else:
@@ -354,7 +352,7 @@ def detect_target_object(img, target_name):
         "distance": guidance["distance"],
         "meters": guidance["meters"],
         "warning": guidance["warning"],
-        "voice message": guidance["message"]
+        "voice_message": voice_message
     }
 
 

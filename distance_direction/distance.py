@@ -26,29 +26,39 @@ KNOWN_WIDTHS = {
     "bench": 1.2,
 }
 
-FOCAL_LENGTH = 600  # Approximate focal length for mobile cameras
+# FIX: Use frame_width-relative focal length instead of hardcoded 600.
+# Real focal length scales with image width — this gives consistent
+# distance estimates regardless of resolution or phone model.
+# Formula: focal_length = frame_width * 0.8
+# (empirically calibrated for typical mobile cameras at medium resolution)
+FOCAL_LENGTH_RATIO = 0.8
+
 
 def estimate_distance(box, frame_width, object_label=""):
     """
     Estimate distance using known object widths and focal length formula.
-    Returns distance in meters with natural language guidance.
+    focal_length is derived from frame_width so it scales with resolution.
+    Returns distance in meters with natural language description.
     """
     x1, y1, x2, y2 = box
     bbox_width = x2 - x1
+
+    # Scale focal length to frame width — works across resolutions
+    focal_length = frame_width * FOCAL_LENGTH_RATIO
 
     # Get known width for object, default 0.4m if unknown
     known_width = KNOWN_WIDTHS.get(object_label.lower(), 0.4)
 
     if bbox_width > 0:
-        meters = (known_width * FOCAL_LENGTH) / bbox_width
-        meters = round(max(0.3, min(meters, 15.0)), 1)  # clamp between 0.3-15m
+        meters = (known_width * focal_length) / bbox_width
+        meters = round(max(0.3, min(meters, 15.0)), 1)  # clamp 0.3–15m
     else:
         meters = 5.0
 
-    # Labels based on calculated meters
+    # Distance labels and natural descriptions
     if meters < 0.8:
         label = "very close"
-        warning = f"Stop! {object_label} is right in front of you"
+        warning = f"{object_label} is right in front of you"   # removed "Stop!" — action handled in utils
         instruction = "Reach out carefully"
     elif meters < 1.5:
         label = "close"
@@ -57,18 +67,18 @@ def estimate_distance(box, frame_width, object_label=""):
     elif meters < 3.0:
         label = "medium"
         warning = f"{object_label} is about 2 meters away"
-        instruction = "Continue moving forward"
+        instruction = "Continue moving"
     elif meters < 5.0:
         label = "far"
-        warning = f"{object_label} is about 3-4 meters away"
-        instruction = "Walk straight ahead"
+        warning = f"{object_label} is about 3 to 4 meters away"
+        instruction = "Walk forward"
     elif meters < 8.0:
         label = "very far"
         warning = f"{object_label} is about 5 meters away"
-        instruction = "Keep walking straight"
+        instruction = "Keep walking"
     else:
         label = "distant"
-        warning = f"{object_label} is far away, about 8+ meters"
+        warning = f"{object_label} is far away, about 8 or more meters"
         instruction = "Move forward to get closer"
 
     return {
